@@ -1,0 +1,612 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heltec V2 Meshtastic Flasher</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efe7d7;
+      --panel: rgba(255, 251, 243, 0.94);
+      --ink: #1d2a2f;
+      --muted: #5f6b6f;
+      --accent: #0b7a75;
+      --accent-strong: #075955;
+      --warn: #c86b17;
+      --border: rgba(29, 42, 47, 0.12);
+      --shadow: 0 24px 70px rgba(20, 37, 45, 0.15);
+      --terminal: #162126;
+      --terminal-ink: #daf7ef;
+      --ok: #1b8f62;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(240, 138, 36, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(11, 122, 117, 0.2), transparent 32%),
+        linear-gradient(135deg, #efe7d7, #f5f0e7);
+      padding: 24px;
+    }
+
+    .shell {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero {
+      padding: 30px 30px 24px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      line-height: 0.95;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      max-width: 12ch;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 1.04rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+    }
+
+    .pane {
+      padding: 24px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 16px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .hidden-control {
+      display: none;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    select,
+    button,
+    input[type="checkbox"] {
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fffdf8;
+      color: var(--ink);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary {
+      background: rgba(11, 122, 117, 0.1);
+      color: var(--accent-strong);
+      border: 1px solid rgba(11, 122, 117, 0.14);
+    }
+
+    .status {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(11, 122, 117, 0.08), rgba(240, 138, 36, 0.08));
+      border: 1px solid rgba(11, 122, 117, 0.14);
+      color: var(--ink);
+      min-height: 58px;
+    }
+
+    .facts {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .facts div {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid rgba(29, 42, 47, 0.08);
+      padding-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .facts div:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .facts span:last-child {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    progress {
+      width: 100%;
+      height: 16px;
+      appearance: none;
+    }
+
+    progress::-webkit-progress-bar {
+      background: rgba(29, 42, 47, 0.1);
+      border-radius: 999px;
+    }
+
+    progress::-webkit-progress-value {
+      background: linear-gradient(90deg, var(--accent), var(--warn));
+      border-radius: 999px;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .terminal-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .terminal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: #0f191d;
+      color: #c5f4e2;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+
+    pre {
+      margin: 0;
+      min-height: 420px;
+      max-height: 60vh;
+      overflow: auto;
+      padding: 20px;
+      background: var(--terminal);
+      color: var(--terminal-ink);
+      font: 0.92rem/1.5 Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .tips {
+      padding: 18px 22px 22px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      line-height: 1.6;
+    }
+
+    .good { color: var(--ok); }
+    .warn { color: var(--warn); }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .hero, .pane { padding: 22px; }
+      pre { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card hero">
+      <span class="eyebrow">Custom Browser Flasher</span>
+      <h1>Heltec V2 Meshtastic</h1>
+      <p>This custom flasher lets people connect a Heltec WiFi LoRa 32 V2.0 and watch live flashing progress in the browser.</p>
+      <p>Use Chrome or Edge on desktop. It uses a fixed 115200 baud rate to favor reliability over speed.</p>
+    </section>
+
+    <section class="grid">
+      <section class="card pane">
+        <div class="controls">
+          <div class="row">
+            <label class="hidden-control">
+              Baud Rate
+              <select id="baudRate" disabled>
+                <option value="115200" selected>115200 (fixed for reliability)</option>
+              </select>
+            </label>
+
+            <label class="hidden-control">
+              Reset Strategy
+              <select id="resetMode">
+                <option value="default_reset" selected>Default reset</option>
+                <option value="no_reset">No reset</option>
+                <option value="hard_reset">Hard reset</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="checkbox">
+            <input id="eraseAll" type="checkbox">
+            Erase the entire flash before writing
+          </label>
+
+          <div class="actions">
+            <button id="connectBtn" class="primary">Connect Board</button>
+            <button id="flashBtn" class="primary" disabled>Flash Firmware</button>
+            <button id="clearBtn" class="secondary">Clear Log</button>
+          </div>
+
+        <div id="status" class="status">Loading flasher tools...</div>
+
+          <div class="progress-wrap">
+            <progress id="progressBar" value="0" max="100"></progress>
+            <div class="progress-text">
+              <span id="progressLabel">0%</span>
+              <span id="bytesLabel">0 / 0 bytes</span>
+            </div>
+          </div>
+
+          <div class="facts">
+            <div><span>Firmware</span><span>Meshtastic Heltec V2.0</span></div>
+            <div><span>Binary</span><span>factory image at offset 0x0</span></div>
+            <div><span>File</span><span>meshtastic-heltec-v2_0-2.7.23.0cab43f.factory.bin</span></div>
+            <div><span>Baud rate</span><span>115200 fixed for reliability</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card terminal-card">
+        <div class="terminal-head">
+          <span>Flash Log</span>
+          <span id="terminalState" class="warn">Not connected</span>
+        </div>
+        <pre id="terminal">Ready.
+</pre>
+        <div class="tips">
+          Tips:
+          <ul>
+            <li>If the board is stubborn, hold the boot button while clicking connect or while flashing starts.</li>
+            <li>This flasher uses 115200 baud for the most reliable connection across boards and cables.</li>
+            <li>This page is for Heltec V2.0. Do not use it for V2.1 unless you build the V2.1 firmware separately.</li>
+          </ul>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    const FIRMWARE_PATH = "meshtastic-heltec-v2_0-2.7.23.0cab43f.factory.bin";
+
+    const connectBtn = document.getElementById("connectBtn");
+    const flashBtn = document.getElementById("flashBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const baudRateEl = document.getElementById("baudRate");
+    const resetModeEl = document.getElementById("resetMode");
+    const eraseAllEl = document.getElementById("eraseAll");
+    const statusEl = document.getElementById("status");
+    const progressBar = document.getElementById("progressBar");
+    const progressLabel = document.getElementById("progressLabel");
+    const bytesLabel = document.getElementById("bytesLabel");
+    const terminalEl = document.getElementById("terminal");
+    const terminalStateEl = document.getElementById("terminalState");
+
+    let ESPLoaderClass = null;
+    let TransportClass = null;
+    let port = null;
+    let transport = null;
+    let loader = null;
+    let chipName = "Unknown";
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function setTerminalState(message, mode = "warn") {
+      terminalStateEl.textContent = message;
+      terminalStateEl.className = mode;
+    }
+
+    function appendLog(text = "") {
+      terminalEl.textContent += `${text}`;
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+
+    function appendLine(text = "") {
+      appendLog(`${text}\n`);
+    }
+
+    function resetProgress() {
+      progressBar.value = 0;
+      progressLabel.textContent = "0%";
+      bytesLabel.textContent = "0 / 0 bytes";
+    }
+
+    const terminal = {
+      clean() {
+        terminalEl.textContent = "";
+      },
+      writeLine(data) {
+        appendLine(data);
+      },
+      write(data) {
+        appendLog(data);
+      },
+    };
+
+    function setBusy(isBusy) {
+      connectBtn.disabled = isBusy;
+      flashBtn.disabled = isBusy || !loader;
+      baudRateEl.disabled = isBusy;
+      resetModeEl.disabled = isBusy;
+      eraseAllEl.disabled = isBusy;
+    }
+
+    async function initFlasherLibrary() {
+      try {
+        const module = await import("https://esm.sh/esptool-js@0.5.6?bundle");
+        ESPLoaderClass = module.ESPLoader;
+        TransportClass = module.Transport;
+
+        if (!ESPLoaderClass || !TransportClass) {
+          throw new Error("esptool-js loaded but did not expose the expected classes.");
+        }
+
+        setStatus("Flasher ready. Connect a board to begin.");
+        appendLine("Flasher library loaded.");
+      } catch (error) {
+        setStatus(`Flasher failed to load: ${error?.message || error}`);
+        setTerminalState("Load failed", "warn");
+        appendLine(`Flasher failed to load: ${error?.message || error}`);
+        appendLine("This page needs internet access to load esptool-js from the CDN.");
+        connectBtn.disabled = true;
+      }
+    }
+
+    async function disconnectCurrent() {
+      try {
+        if (transport) {
+          await transport.disconnect();
+        }
+      } catch (error) {
+        appendLine(`Disconnect warning: ${error?.message || error}`);
+      }
+      transport = null;
+      loader = null;
+      port = null;
+      chipName = "Unknown";
+      flashBtn.disabled = true;
+      setTerminalState("Not connected", "warn");
+    }
+
+    async function connectBoard() {
+      if (!("serial" in navigator)) {
+        throw new Error("Web Serial is not available in this browser. Use Chrome or Edge.");
+      }
+
+      if (!ESPLoaderClass || !TransportClass) {
+        throw new Error("The flasher library is not loaded yet.");
+      }
+
+      await disconnectCurrent();
+      resetProgress();
+      terminal.clean();
+      appendLine("Requesting serial port access...");
+      setStatus("Choose the Heltec serial port in the browser dialog.");
+      setBusy(true);
+
+      try {
+        port = await navigator.serial.requestPort();
+
+        transport = new TransportClass(port, false);
+        loader = new ESPLoaderClass({
+          transport,
+          baudrate: Number(baudRateEl.value),
+          terminal,
+          debugLogging: false,
+        });
+
+        const resetMode = resetModeEl.value;
+        chipName = await loader.main(resetMode);
+        flashBtn.disabled = false;
+        setStatus(`Connected to ${chipName}. Ready to flash ${FIRMWARE_PATH}.`);
+        setTerminalState(`Connected: ${chipName}`, "good");
+        appendLine(`Connected to ${chipName}.`);
+      } catch (error) {
+        await disconnectCurrent();
+        setStatus(`Connection failed: ${error?.message || error}`);
+        appendLine(`Connection failed: ${error?.message || error}`);
+        throw error;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function fetchFirmware() {
+      appendLine(`Downloading firmware: ${FIRMWARE_PATH}`);
+      const response = await fetch(FIRMWARE_PATH, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Could not fetch firmware file (${response.status}).`);
+      }
+      const buffer = await response.arrayBuffer();
+      appendLine(`Firmware loaded: ${buffer.byteLength} bytes.`);
+      return new Uint8Array(buffer);
+    }
+
+    async function flashBoard() {
+      if (!loader) {
+        throw new Error("Connect a board first.");
+      }
+
+      setBusy(true);
+      resetProgress();
+      setStatus("Fetching firmware and preparing the flash session...");
+      setTerminalState("Flashing in progress", "warn");
+
+      try {
+        const firmwareData = await fetchFirmware();
+        const totalSize = firmwareData.byteLength;
+
+        setStatus(`Flashing ${chipName} at ${baudRateEl.value} baud...`);
+        appendLine(`Starting flash at ${baudRateEl.value} baud.`);
+
+        await loader.writeFlash({
+          fileArray: [{ data: firmwareData, address: 0x0 }],
+          flashMode: "dio",
+          flashFreq: "40m",
+          flashSize: "8MB",
+          eraseAll: eraseAllEl.checked,
+          compress: true,
+          reportProgress: (_fileIndex, written, total) => {
+            const percent = total ? (written / total) * 100 : 0;
+            progressBar.value = percent;
+            progressLabel.textContent = `${percent.toFixed(1)}%`;
+            bytesLabel.textContent = `${written.toLocaleString()} / ${total.toLocaleString()} bytes`;
+          },
+        });
+
+        progressBar.value = 100;
+        progressLabel.textContent = "100%";
+        bytesLabel.textContent = `${totalSize.toLocaleString()} / ${totalSize.toLocaleString()} bytes`;
+        setStatus(`Flash complete for ${chipName}. Resetting board...`);
+        appendLine("Flash finished successfully.");
+
+        try {
+          await loader.after("hard_reset");
+        } catch (error) {
+          appendLine(`Reset warning: ${error?.message || error}`);
+        }
+
+        setStatus(`Done. ${chipName} should now boot Meshtastic.`);
+        setTerminalState("Flash complete", "good");
+      } catch (error) {
+        setStatus(`Flash failed: ${error?.message || error}`);
+        setTerminalState("Flash failed", "warn");
+        appendLine(`Flash failed: ${error?.message || error}`);
+        throw error;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    connectBtn.addEventListener("click", async () => {
+      try {
+        await connectBoard();
+      } catch {
+        // Error already surfaced in UI.
+      }
+    });
+
+    flashBtn.addEventListener("click", async () => {
+      try {
+        await flashBoard();
+      } catch {
+        // Error already surfaced in UI.
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      terminalEl.textContent = "Ready.\n";
+      resetProgress();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (transport) {
+        transport.disconnect().catch(() => {});
+      }
+    });
+
+    window.addEventListener("error", (event) => {
+      appendLine(`Page error: ${event.message}`);
+      setStatus(`Page error: ${event.message}`);
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+      const reason = event.reason?.message || event.reason || "Unknown promise rejection";
+      appendLine(`Unhandled error: ${reason}`);
+      setStatus(`Unhandled error: ${reason}`);
+    });
+
+    initFlasherLibrary();
+  </script>
+</body>
+</html>

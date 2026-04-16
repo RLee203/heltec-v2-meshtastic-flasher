@@ -1,0 +1,16 @@
+﻿{
+  "name": "Meshtastic Heltec V2.0",
+  "version": "2.7.23.0cab43f",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "meshtastic-heltec-v2_0-2.7.23.0cab43f.factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
