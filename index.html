@@ -501,6 +501,19 @@
       }
     }
 
+    function arrayBufferToBinaryString(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunkSize = 0x8000;
+
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode(...chunk);
+      }
+
+      return binary;
+    }
+
     async function fetchFirmware() {
       appendLine(`Downloading firmware: ${FIRMWARE_PATH}`);
       const response = await fetch(FIRMWARE_PATH, { cache: "no-store" });
@@ -509,7 +522,10 @@
       }
       const buffer = await response.arrayBuffer();
       appendLine(`Firmware loaded: ${buffer.byteLength} bytes.`);
-      return new Uint8Array(buffer);
+      return {
+        size: buffer.byteLength,
+        data: arrayBufferToBinaryString(buffer),
+      };
     }
 
     async function flashBoard() {
@@ -523,14 +539,14 @@
       setTerminalState("Flashing in progress", "warn");
 
       try {
-        const firmwareData = await fetchFirmware();
-        const totalSize = firmwareData.byteLength;
+        const firmware = await fetchFirmware();
+        const totalSize = firmware.size;
 
         setStatus(`Flashing ${chipName} at ${baudRateEl.value} baud...`);
         appendLine(`Starting flash at ${baudRateEl.value} baud.`);
 
         await loader.writeFlash({
-          fileArray: [{ data: firmwareData, address: 0x0 }],
+          fileArray: [{ data: firmware.data, address: 0x0 }],
           flashMode: "dio",
           flashFreq: "40m",
           flashSize: "8MB",
